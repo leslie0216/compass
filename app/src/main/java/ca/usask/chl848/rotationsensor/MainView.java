@@ -669,6 +669,7 @@ public class MainView extends View {
                 if (dist < (m_remotePhoneRadius + m_ballRadius)){
                     if (dist < rate) {
                         receiverId = remotePhoneInfo.m_id;
+                        rate = (float)dist;
                     }
                 }
             }
@@ -773,8 +774,8 @@ public class MainView extends View {
         // init ball names
         m_ballNames = new ArrayList<>();
 
-        m_maxBlocks = 3;
-        m_maxTrails = 6;
+        m_maxBlocks = 5;
+        m_maxTrails = 9;
 
         m_currentBlock = 0;
         m_currentTrail = 0;
