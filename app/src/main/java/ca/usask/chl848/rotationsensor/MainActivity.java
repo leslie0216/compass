@@ -73,6 +73,15 @@ public class MainActivity extends Activity {
     /** BT end
      */
 
+    /**
+     * experiment begin
+     */
+    private Button m_startBtn;
+    private Button m_continueBtn;
+    /**
+     * experiment end
+     */
+
     private SensorManager sm;
 
     private Sensor aSensor;
@@ -120,18 +129,13 @@ public class MainActivity extends Activity {
          * BT end
          */
 
-        m_mainView = new MainView(this);
-
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        this.addContentView(m_mainView, new LinearLayout.LayoutParams(displayMetrics.widthPixels, displayMetrics.heightPixels));
-
-        Button btn = new Button(this);
-        btn.setText("Add Ball");
-        btn.setOnClickListener(new View.OnClickListener() {
+        m_startBtn = new Button(this);
+        m_startBtn.setText("Start");
+        m_startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (m_mainView != null && m_mainView.getBallCount() == 0) {
-                    m_mainView.addBall();
+                    m_mainView.startBlock();
                 }
             }
         });
@@ -140,9 +144,43 @@ public class MainActivity extends Activity {
 
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        relativeLayout.addView(btn, layoutParams);
+        relativeLayout.addView(m_startBtn, layoutParams);
+
+        setStartButtonEnabled(false);
+
+        m_mainView = new MainView(this);
+
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        this.addContentView(m_mainView, new LinearLayout.LayoutParams(displayMetrics.widthPixels, displayMetrics.heightPixels));
 
         this.addContentView(relativeLayout, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        /**
+         * experiment begin
+         */
+        m_continueBtn = new Button(this);
+        m_continueBtn.setText("Continue");
+        m_continueBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (m_mainView != null && m_mainView.getBallCount() == 0)
+                    m_mainView.nextBlock();
+            }
+        });
+
+        RelativeLayout relativeLayout_con = new RelativeLayout(this);
+
+        RelativeLayout.LayoutParams layoutParams_con = new RelativeLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams_con.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        layoutParams_con.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        relativeLayout_con.addView(m_continueBtn, layoutParams_con);
+
+        setContinueButtonEnabled(false);
+
+        this.addContentView(relativeLayout_con, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        /**
+         * experiment end
+         */
 
         m_isSensorRegistered = false;
         registerSensors();
@@ -236,6 +274,21 @@ public class MainActivity extends Activity {
             m_mainView.setRotation(values);
         }
     }
+
+    /**
+     * experiment begin
+     */
+    public void setStartButtonEnabled(boolean enabled) {
+        m_startBtn.setEnabled(enabled);
+    }
+
+    public void setContinueButtonEnabled(boolean enabled) {
+        m_continueBtn.setEnabled(enabled);
+    }
+
+    /**
+     * experiment end
+     */
 
     /**
      * BT begin

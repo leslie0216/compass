@@ -60,6 +60,7 @@ public class MainView extends View {
         public float m_ballY;
         public boolean m_isTouched;
         public String m_id;
+        public String m_name;
 
     }
     private ArrayList<Ball> m_balls;
@@ -73,8 +74,6 @@ public class MainView extends View {
     private float m_localCoordinateCenterY;
     private float m_localCoordinateRadius;
 
-    private float m_throwAngle;
-
     private boolean m_showRemoteNames;
     final Handler handler = new Handler();
     Runnable mLongPressed = new Runnable() {
@@ -84,6 +83,22 @@ public class MainView extends View {
             invalidate();
         }
     };
+
+    /**
+     * experiment begin
+     */
+
+    private ArrayList<String> m_ballNames;
+    private long m_trailStartTime;
+    private int m_numberOfDrops;
+    private int m_numberOfErrors;
+    private int m_maxBlocks;
+    private int m_maxTrails;
+    private int m_currentBlock;
+    private int m_currentTrail;
+    /**
+     * experiment end
+     */
 
     public MainView (Context context) {
         super(context);
@@ -110,7 +125,6 @@ public class MainView extends View {
         m_localCoordinateCenterX = displayMetrics.widthPixels * 0.5f;
         m_localCoordinateCenterY = displayMetrics.heightPixels * 0.5f;
         m_localCoordinateRadius = displayMetrics.widthPixels * 0.5f;
-        m_throwAngle = 0.0f;
 
         m_remotePhoneRadius = displayMetrics.widthPixels * 0.05f;
 
@@ -150,6 +164,20 @@ public class MainView extends View {
                 m_paint.setColor(ball.m_ballColor);
                 m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
                 canvas.drawCircle(ball.m_ballX, ball.m_ballY, m_ballRadius, m_paint);
+
+                /**
+                 * experiment begin
+                 */
+                m_paint.setStrokeWidth(2);
+                float textX = ball.m_ballX - m_ballRadius;
+                float textY = ball.m_ballY - m_ballRadius;
+                if (ball.m_name.length() > 5) {
+                    textX = ball.m_ballX - m_ballRadius * 2.0f;
+                }
+                canvas.drawText(ball.m_name, textX, textY, m_paint);
+                /**
+                 * experiment end
+                 */
             }
         }
     }
@@ -254,7 +282,8 @@ public class MainView extends View {
 
         RotationVector rotationVector = getRotationVector();
 
-        String output = "Z = " + String.format("%.3f",rotationVector.m_z) + " X = " + String.format("%.3f", rotationVector.m_x) + " Y = " + String.format("%.3f", rotationVector.m_y);
+        //String output = "Z = " + String.format("%.3f",rotationVector.m_z) + " X = " + String.format("%.3f", rotationVector.m_x) + " Y = " + String.format("%.3f", rotationVector.m_y);
+        String output = "Yaw = " + String.format("%.3f",rotationVector.m_z);
         canvas.drawText(output, (int) (displayMetrics.widthPixels * 0.3), (int) (displayMetrics.heightPixels * 0.85), m_paint);
 
         /*
@@ -271,27 +300,6 @@ public class MainView extends View {
         String output3 = "Y = " + String.format("%.4f", m_rotationVector[2]);
         canvas.drawText(output3, (int) (displayMetrics.widthPixels * 0.05), (int) (displayMetrics.heightPixels * 0.85), m_paint);
         */
-    }
-
-    public void showRemoteRotationVector(Canvas canvas, RemotePhoneInfo info) {
-        m_paint.setTextSize(30);
-        m_paint.setColor(Color.RED);
-        m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
-
-        DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
-
-        //String output1 = "Z axis (Yaw) = " + String.format("%.4f", m_rotationVector[0]);
-        String output1 = "RZ = " + String.format("%.4f", info.m_z);
-
-        canvas.drawText(output1, (int) (displayMetrics.widthPixels * 0.75), (int) (displayMetrics.heightPixels * 0.75), m_paint);
-
-        //String output2 = "X axis (Pitch) = " + String.format("%.4f", m_rotationVector[1]);
-        String output2 = "RX = " + String.format("%.4f", info.m_x);
-        canvas.drawText(output2, (int) (displayMetrics.widthPixels * 0.75), (int) (displayMetrics.heightPixels * 0.8), m_paint);
-
-        //String output3 = "Y axis (Roll) = " + String.format("%.4f", m_rotationVector[2]);
-        String output3 = "RY = " + String.format("%.4f", info.m_y);
-        canvas.drawText(output3, (int) (displayMetrics.widthPixels * 0.75), (int) (displayMetrics.heightPixels * 0.85), m_paint);
     }
 
     public void showMessage(Canvas canvas) {
@@ -372,26 +380,6 @@ public class MainView extends View {
         m_message = msg;
     }
 
-    public void sendRotation(){
-        JSONObject msg = new JSONObject();
-        RotationVector rotationVector = getRotationVector();
-        try {
-            msg.put("id", m_id);
-            msg.put("z", rotationVector.m_z);
-            msg.put("x", rotationVector.m_x);
-            msg.put("y", rotationVector.m_y);
-            msg.put("color", m_color);
-            msg.put("isSendingBall", false);
-        } catch (JSONException e){
-            e.printStackTrace();
-        }
-
-        MainActivity ma = (MainActivity)getContext();
-        if (ma != null) {
-            ma.addMessage(msg.toString());
-        }
-    }
-
     public void updateRemotePhone(String id, int color, float x, float y, float z){
         if (id.equalsIgnoreCase(m_id)) {
             return;
@@ -421,6 +409,16 @@ public class MainView extends View {
             info.m_z = z;
 
             m_remotePhones.add(info);
+
+            /**
+             * experiment end
+             */
+            if (m_remotePhones.size() == 2) {
+                initExperiment();
+            }
+            /**
+             * experiment end
+             */
         }
     }
 
@@ -456,7 +454,6 @@ public class MainView extends View {
         switch (eventaction) {
             case MotionEvent.ACTION_DOWN:
                 m_touchedBallId = -1;
-                m_throwAngle = 0.0f;
                 for (int i = 0; i < ballCount; ++i){
                     Ball ball = m_balls.get(i);
                     ball.m_isTouched = false;
@@ -532,22 +529,10 @@ public class MainView extends View {
                             }
                         }
 
-                        if (!isOverlap) {
-                            if (isBoundary(X, Y))
-                            {
-                                String id = SendTo(m_throwAngle);
-                                if (!id.isEmpty())
-                                {
-                                    sendBall(ball, id);
-                                    ((MainActivity)getContext()).showToast("send ball to : " + id);
-                                    removeBall(ball.m_id);
-                                    this.invalidate();
-                                }
-                            } else {
-                                ball.m_ballX = X;
-                                ball.m_ballY = Y;
-                                this.invalidate();
-                            }
+                        if (!isOverlap & !isBoundary(X, Y)) {
+                            ball.m_ballX = X;
+                            ball.m_ballY = Y;
+                            this.invalidate();
                         }
                     }
                 }
@@ -558,10 +543,39 @@ public class MainView extends View {
                     setShowRemoteNames(false);
                     invalidate();
                 }
+
+                if (m_touchedBallId > -1) {
+                    Ball ball = m_balls.get(m_touchedBallId);
+                    if (ball.m_isTouched) {
+                        boolean isOverlap = false;
+
+                        for (int j = 0; j < ballCount; ++j) {
+                            if (j != m_touchedBallId) {
+                                Ball ball2 = m_balls.get(j);
+
+                                double dist = Math.sqrt(Math.pow((X - ball2.m_ballX), 2) + Math.pow((Y - ball2.m_ballY), 2));
+                                if (dist <= m_ballRadius * 2) {
+                                    isOverlap = true;
+                                }
+                            }
+                        }
+
+                        if (!isOverlap) {
+                            String id = isSending(ball.m_ballX, ball.m_ballY);
+                            if (!ball.m_name.isEmpty() && !id.isEmpty() && id.equalsIgnoreCase(ball.m_name)) {
+                                ((MainActivity) getContext()).showToast("send ball to : " + id);
+                                //sendBall(ball, id);
+                                removeBall(ball.m_id);
+                                this.invalidate();
+                                endTrail();
+                            }
+                        }
+                    }
+                }
+
                 for (Ball ball : m_balls) {
                     ball.m_isTouched = false;
                 }
-                m_throwAngle = 0.0f;
                 break;
         }
 
@@ -577,33 +591,25 @@ public class MainView extends View {
                 // check bottom
                 if ((y + m_ballRadius) >= (displayMetrics.heightPixels * 0.75f)) {
                     rt = true;
-                    m_throwAngle = -1.0f;
                     break;
                 }
 
                 // check left
                 if (x - m_ballRadius <= 0.0f) {
                     rt = true;
-                    m_throwAngle = 180.0f;
                     break;
                 }
 
                 // check right
                 if (x + m_ballRadius >= displayMetrics.widthPixels) {
                     rt = true;
-                    m_throwAngle = 0.0f;
                     break;
                 }
             } else {
                 //check top
                 double dist = Math.sqrt(Math.pow((x - m_localCoordinateCenterX), 2) + Math.pow((y - m_localCoordinateCenterY), 2));
                 if (dist + m_ballRadius >= m_localCoordinateRadius) {
-                    float sin = (m_localCoordinateCenterY - y)/(float)dist;
                     rt = true;
-                    m_throwAngle = (float)Math.toDegrees(Math.asin(sin));
-                    if (x < m_localCoordinateCenterX) {
-                        m_throwAngle = 180.0f - m_throwAngle;
-                    }
                 }
                 break;
             }
@@ -650,17 +656,19 @@ public class MainView extends View {
         return rt;
     }
 
-    private String SendTo(float angle) {
+    private String isSending(float x, float y) {
         String receiverId = "";
         float rate = 1000.0f;
-        if (angle != -1.0f) {
-            if (!m_remotePhones.isEmpty()) {
-                for (RemotePhoneInfo remotePhoneInfo : m_remotePhones) {
-                    float angle_remote = calculateRemoteAngleInLocalCoordinate(remotePhoneInfo.m_z);
-                    if (Math.abs(angle_remote - angle) <= 10.0f){
-                        if (angle_remote < rate) {
-                            receiverId = remotePhoneInfo.m_id;
-                        }
+        if (!m_remotePhones.isEmpty()) {
+            for (RemotePhoneInfo remotePhoneInfo : m_remotePhones) {
+                float angle_remote = calculateRemoteAngleInLocalCoordinate(remotePhoneInfo.m_z);
+                float pointX_remote = m_localCoordinateCenterX + m_localCoordinateRadius * (float) Math.cos(Math.toRadians(angle_remote));
+                float pointY_remote = m_localCoordinateCenterY - m_localCoordinateRadius * (float) Math.sin(Math.toRadians(angle_remote));
+
+                double dist = Math.sqrt(Math.pow((x - pointX_remote), 2) + Math.pow((y - pointY_remote), 2));
+                if (dist < (m_remotePhoneRadius + m_ballRadius)){
+                    if (dist < rate) {
+                        receiverId = remotePhoneInfo.m_id;
                     }
                 }
             }
@@ -677,6 +685,7 @@ public class MainView extends View {
         ball.m_ballY = m_ballBornY;
         ball.m_isTouched = false;
         ball.m_id = UUID.randomUUID().toString();
+        ball.m_name = getBallName();
         m_balls.add(ball);
         this.invalidate();
     }
@@ -735,4 +744,109 @@ public class MainView extends View {
             ma.addMessage(jsonObject.toString());
         }
     }
+
+
+    public void sendRotation(){
+        JSONObject msg = new JSONObject();
+        RotationVector rotationVector = getRotationVector();
+        try {
+            msg.put("id", m_id);
+            msg.put("z", rotationVector.m_z);
+            msg.put("x", rotationVector.m_x);
+            msg.put("y", rotationVector.m_y);
+            msg.put("color", m_color);
+            msg.put("isSendingBall", false);
+        } catch (JSONException e){
+            e.printStackTrace();
+        }
+
+        MainActivity ma = (MainActivity)getContext();
+        if (ma != null) {
+            ma.addMessage(msg.toString());
+        }
+    }
+
+    /**
+     * experiment begin
+     */
+    private void initExperiment() {
+        // init ball names
+        m_ballNames = new ArrayList<>();
+
+        m_maxBlocks = 3;
+        m_maxTrails = 6;
+
+        m_currentBlock = 0;
+        m_currentTrail = 0;
+
+        resetBlock();
+
+        ((MainActivity)getContext()).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ((MainActivity) getContext()).setStartButtonEnabled(true);
+            }
+        });
+    }
+
+    private String getBallName() {
+        if (m_ballNames.isEmpty()) {
+            return "";
+        }
+
+        Random rnd = new Random();
+        int index = rnd.nextInt(m_ballNames.size());
+        String name = m_ballNames.get(index);
+        m_ballNames.remove(index);
+        return name;
+    }
+
+    public void nextBlock() {
+        ((MainActivity)getContext()).setStartButtonEnabled(true);
+        ((MainActivity)getContext()).setContinueButtonEnabled(false);
+    }
+
+    public void resetBlock() {
+        // reset ball names
+        m_ballNames.clear();
+        for (RemotePhoneInfo remotePhoneInfo : m_remotePhones){
+            for(int i=0; i<3; i++){
+                m_ballNames.add(remotePhoneInfo.m_id);
+            }
+        }
+    }
+
+    public void startBlock() {
+        m_currentBlock += 1;
+        m_currentTrail = 0;
+        resetBlock();
+        startTrial();
+        ((MainActivity)getContext()).setStartButtonEnabled(false);
+    }
+
+    public void endBlock() {
+        if (m_currentBlock < m_maxBlocks) {
+            ((MainActivity) getContext()).setContinueButtonEnabled(true);
+        }
+        m_currentTrail = 0;
+    }
+
+    public void startTrial() {
+        addBall();
+        m_trailStartTime = System.currentTimeMillis();
+        m_currentTrail += 1;
+    }
+
+    public void endTrail() {
+        long timeElapse = System.currentTimeMillis() - m_trailStartTime;
+
+        if (m_currentTrail < m_maxTrails) {
+            startTrial();
+        } else {
+            endBlock();
+        }
+    }
+    /**
+     * experiment end
+     */
 }
