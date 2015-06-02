@@ -565,7 +565,7 @@ public class MainView extends View {
                             String name = isSending(ball.m_ballX, ball.m_ballY);
                             if (!ball.m_name.isEmpty() && !name.isEmpty()) {
                                 if (name.equalsIgnoreCase(ball.m_name)) {
-                                    ((MainActivity) getContext()).showToast("send ball to : " + name);
+                                    //((MainActivity) getContext()).showToast("send ball to : " + name);
                                     //sendBall(ball, id);
                                     removeBall(ball.m_id);
                                     this.invalidate();
