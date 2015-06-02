@@ -28,6 +28,7 @@ public class MainView extends View {
     Paint m_paint;
 
     private String m_id;
+    private String m_name;
     private int m_color;
 
     private class RotationVector {
@@ -44,7 +45,7 @@ public class MainView extends View {
     Bitmap m_pic;
 
     public class RemotePhoneInfo {
-        String m_id;
+        String m_name;
         int m_color;
         float m_x;
         float m_y;
@@ -97,6 +98,7 @@ public class MainView extends View {
     private int m_currentBlock;
     private int m_currentTrail;
     private static final int m_experimentPhoneNumber = 3;
+    private MainLogger m_logger;
     /**
      * experiment end
      */
@@ -113,7 +115,8 @@ public class MainView extends View {
 
         m_message = "No Message";
 
-        m_id = ((MainActivity)(context)).getBTName();
+        m_id = ((MainActivity)(context)).getUserId();
+        m_name = ((MainActivity)(context)).getUserName();
         Random rnd = new Random();
         m_color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
 
@@ -265,10 +268,10 @@ public class MainView extends View {
                     m_paint.setStrokeWidth(2);
                     float textX = pointX_remote - m_remotePhoneRadius;
                     float textY = pointY_remote - m_remotePhoneRadius * 1.5f;
-                    if (info.m_id.length() > 5) {
+                    if (info.m_name.length() > 5) {
                         textX = pointX_remote - m_remotePhoneRadius * 2.0f;
                     }
-                    canvas.drawText(info.m_id, textX, textY, m_paint);
+                    canvas.drawText(info.m_name, textX, textY, m_paint);
                 }
             }
         }
@@ -381,8 +384,8 @@ public class MainView extends View {
         m_message = msg;
     }
 
-    public void updateRemotePhone(String id, int color, float x, float y, float z){
-        if (id.equalsIgnoreCase(m_id)) {
+    public void updateRemotePhone(String name, int color, float x, float y, float z){
+        if (name.isEmpty() || name.equalsIgnoreCase(m_name)) {
             return;
         }
 
@@ -390,7 +393,7 @@ public class MainView extends View {
         boolean isFound = false;
         for (int i = 0; i<size; ++i) {
             RemotePhoneInfo info = m_remotePhones.get(i);
-            if (info.m_id.equalsIgnoreCase(id)) {
+            if (info.m_name.equalsIgnoreCase(name)) {
                 info.m_color = color;
                 info.m_x = x;
                 info.m_y = y;
@@ -403,7 +406,7 @@ public class MainView extends View {
 
         if (!isFound) {
             RemotePhoneInfo info = new RemotePhoneInfo();
-            info.m_id = id;
+            info.m_name = name;
             info.m_color = color;
             info.m_x = x;
             info.m_y = y;
@@ -429,10 +432,6 @@ public class MainView extends View {
 
     public void removePhones(ArrayList<RemotePhoneInfo> phoneInfos) {
         m_remotePhones.removeAll(phoneInfos);
-    }
-
-    public String getPhoneId() {
-        return m_id;
     }
 
     public void clearRemotePhoneInfo() {
@@ -546,6 +545,7 @@ public class MainView extends View {
                 }
 
                 if (m_touchedBallId > -1) {
+                    m_numberOfDrops += 1;
                     Ball ball = m_balls.get(m_touchedBallId);
                     if (ball.m_isTouched) {
                         boolean isOverlap = false;
@@ -563,12 +563,16 @@ public class MainView extends View {
 
                         if (!isOverlap) {
                             String id = isSending(ball.m_ballX, ball.m_ballY);
-                            if (!ball.m_name.isEmpty() && !id.isEmpty() && id.equalsIgnoreCase(ball.m_name)) {
-                                ((MainActivity) getContext()).showToast("send ball to : " + id);
-                                //sendBall(ball, id);
-                                removeBall(ball.m_id);
-                                this.invalidate();
-                                endTrail();
+                            if (!ball.m_name.isEmpty() && !id.isEmpty()) {
+                                if (id.equalsIgnoreCase(ball.m_name)) {
+                                    ((MainActivity) getContext()).showToast("send ball to : " + id);
+                                    //sendBall(ball, id);
+                                    removeBall(ball.m_id);
+                                    this.invalidate();
+                                    endTrail();
+                                } else {
+                                    m_numberOfErrors += 1;
+                                }
                             }
                         }
                     }
@@ -669,7 +673,7 @@ public class MainView extends View {
                 double dist = Math.sqrt(Math.pow((x - pointX_remote), 2) + Math.pow((y - pointY_remote), 2));
                 if (dist < (m_remotePhoneRadius + m_ballRadius)){
                     if (dist < rate) {
-                        receiverId = remotePhoneInfo.m_id;
+                        receiverId = remotePhoneInfo.m_name;
                         rate = (float)dist;
                     }
                 }
@@ -724,15 +728,15 @@ public class MainView extends View {
         }
     }
 
-    public void sendBall(Ball ball, String receiverId ) {
+    public void sendBall(Ball ball, String receiverName ) {
         JSONObject jsonObject = new JSONObject();
         RotationVector rotationVector = getRotationVector();
         try {
             jsonObject.put("ballId", ball.m_id);
             jsonObject.put("ballColor", ball.m_ballColor);
-            jsonObject.put("receiverId", receiverId);
+            jsonObject.put("receiverName", receiverName);
             jsonObject.put("isSendingBall", true);
-            jsonObject.put("id", m_id);
+            jsonObject.put("name", m_name);
             jsonObject.put("z", rotationVector.m_z);
             jsonObject.put("x", rotationVector.m_z);
             jsonObject.put("y", rotationVector.m_z);
@@ -752,7 +756,7 @@ public class MainView extends View {
         JSONObject msg = new JSONObject();
         RotationVector rotationVector = getRotationVector();
         try {
-            msg.put("id", m_id);
+            msg.put("name", m_name);
             msg.put("z", rotationVector.m_z);
             msg.put("x", rotationVector.m_x);
             msg.put("y", rotationVector.m_y);
@@ -783,6 +787,8 @@ public class MainView extends View {
 
         resetBlock();
 
+        m_logger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name));
+
         ((MainActivity)getContext()).runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -803,6 +809,10 @@ public class MainView extends View {
         return name;
     }
 
+    public boolean isFinished() {
+        return m_currentBlock == m_maxBlocks;
+    }
+
     public void nextBlock() {
         ((MainActivity)getContext()).setStartButtonEnabled(true);
         ((MainActivity)getContext()).setContinueButtonEnabled(false);
@@ -813,13 +823,16 @@ public class MainView extends View {
         m_ballNames.clear();
         for (RemotePhoneInfo remotePhoneInfo : m_remotePhones){
             for(int i=0; i<3; i++){
-                m_ballNames.add(remotePhoneInfo.m_id);
+                m_ballNames.add(remotePhoneInfo.m_name);
             }
         }
 
         // reset self phone color
         Random rnd = new Random();
         m_color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+
+        m_numberOfDrops = 0;
+        m_numberOfErrors = 0;
     }
 
     public void startBlock() {
@@ -831,25 +844,41 @@ public class MainView extends View {
     }
 
     public void endBlock() {
-        if (m_currentBlock < m_maxBlocks) {
-            ((MainActivity) getContext()).setContinueButtonEnabled(true);
+        if (isFinished() && (m_logger != null)) {
+            m_logger.close();
         }
+
+        ((MainActivity) getContext()).setContinueButtonEnabled(true);
         m_currentTrail = 0;
     }
 
     public void startTrial() {
-        addBall();
         m_trailStartTime = System.currentTimeMillis();
         m_currentTrail += 1;
+        m_numberOfErrors = 0;
+        m_numberOfDrops = 0;
+        addBall();
     }
 
     public void endTrail() {
         long timeElapse = System.currentTimeMillis() - m_trailStartTime;
 
+        // <participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of drops for this trial> <number of errors for this trial>
+
+        if (m_logger != null) {
+            m_logger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + timeElapse + "," + m_numberOfDrops + "," + m_numberOfErrors);
+        }
+
         if (m_currentTrail < m_maxTrails) {
             startTrial();
         } else {
             endBlock();
+        }
+    }
+
+    public void closeLogger() {
+        if (m_logger != null) {
+            m_logger.close();
         }
     }
     /**

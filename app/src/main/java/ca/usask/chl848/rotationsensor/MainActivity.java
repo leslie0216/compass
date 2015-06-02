@@ -13,7 +13,9 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.DisplayMetrics;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -109,6 +111,18 @@ public class MainActivity extends Activity {
         }
     };
 
+    private static boolean m_isExit = false;
+
+    Handler m_exitHandler = new Handler() {
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            m_isExit = false;
+        }
+
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,7 +149,12 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (m_mainView != null && m_mainView.getBallCount() == 0) {
-                    m_mainView.startBlock();
+                    if (!m_mainView.isFinished()) {
+                        m_mainView.startBlock();
+                    } else {
+                        finish();
+                        System.exit(0);
+                    }
                 }
             }
         });
@@ -164,7 +183,11 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (m_mainView != null && m_mainView.getBallCount() == 0)
-                    m_mainView.nextBlock();
+                    if (!m_mainView.isFinished()) {
+                        m_mainView.nextBlock();
+                    } else {
+                        showDoneButton();
+                    }
             }
         });
 
@@ -286,6 +309,12 @@ public class MainActivity extends Activity {
         m_continueBtn.setEnabled(enabled);
     }
 
+    public void showDoneButton() {
+        setContinueButtonEnabled(false);
+        m_startBtn.setText("Done");
+        m_startBtn.setEnabled(true);
+    }
+
     /**
      * experiment end
      */
@@ -316,6 +345,28 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         stopThreads();
         super.onDestroy();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            exit();
+            return false;
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    private void exit() {
+        if (!m_isExit) {
+            m_isExit = true;
+            Toast.makeText(getApplicationContext(), "press back key again to exit", Toast.LENGTH_SHORT).show();
+            m_exitHandler.sendEmptyMessageDelayed(0, 2000);
+        } else {
+            m_mainView.closeLogger();
+            finish();
+            System.exit(0);
+        }
     }
 
     private void stopThreads() {
@@ -409,8 +460,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    public String getBTName() {
+    public String getUserName() {
         return m_userName;
+    }
+
+    public String getUserId() {
+        return m_userId;
     }
 
     private class ConnectedThread extends Thread {
@@ -637,12 +692,12 @@ public class MainActivity extends Activity {
 
             int len = jsonArray.length();
 
-            ArrayList<String> ids = new ArrayList<>();
+            ArrayList<String> names = new ArrayList<>();
 
             for (int i=0; i<len; ++i) {
                 JSONObject jsonObject = jsonArray.getJSONObject(i);
 
-                final String senderId = jsonObject.getString("id");
+                final String senderName = jsonObject.getString("name");
                 int senderColor = jsonObject.getInt("color");
                 float senderX = (float) jsonObject.getDouble("x");
                 float senderY = (float) jsonObject.getDouble("y");
@@ -650,13 +705,13 @@ public class MainActivity extends Activity {
 
                 //MainView mv = (MainView) findViewById(m_mainViewId);
                 if (m_mainView != null) {
-                    m_mainView.updateRemotePhone(senderId, senderColor, senderX, senderY, senderZ);
+                    m_mainView.updateRemotePhone(senderName, senderColor, senderX, senderY, senderZ);
                 }
 
                 boolean isSendingBall = jsonObject.getBoolean("isSendingBall");
                 if (isSendingBall && m_mainView != null) {
-                    String receiverId = jsonObject.getString("receiverId");
-                    if (receiverId.equalsIgnoreCase(m_mainView.getPhoneId())) {
+                    String receiverId = jsonObject.getString("receiverName");
+                    if (receiverId.equalsIgnoreCase(m_userName)) {
                         String ballId = jsonObject.getString("ballId");
                         int ballColor = jsonObject.getInt("ballColor");
                         m_mainView.receivedBall(ballId, ballColor);
@@ -664,19 +719,19 @@ public class MainActivity extends Activity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                showToast("received ball from : " + senderId);
+                                showToast("received ball from : " + senderName);
                             }
                         });
                     }
                 }
 
-                ids.add(senderId);
+                names.add(senderName);
             }
 
             ArrayList<MainView.RemotePhoneInfo> remotePhoneInfos = m_mainView.getRemotePhones();
             ArrayList<MainView.RemotePhoneInfo> lostPhoneInfos = new ArrayList<>();
             for (MainView.RemotePhoneInfo phoneInfo : remotePhoneInfos) {
-                if (!ids.contains(phoneInfo.m_id)) {
+                if (!names.contains(phoneInfo.m_name)) {
                     lostPhoneInfos.add(phoneInfo);
                 }
             }
