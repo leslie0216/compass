@@ -562,10 +562,10 @@ public class MainView extends View {
                         }
 
                         if (!isOverlap) {
-                            String id = isSending(ball.m_ballX, ball.m_ballY);
-                            if (!ball.m_name.isEmpty() && !id.isEmpty()) {
-                                if (id.equalsIgnoreCase(ball.m_name)) {
-                                    ((MainActivity) getContext()).showToast("send ball to : " + id);
+                            String name = isSending(ball.m_ballX, ball.m_ballY);
+                            if (!ball.m_name.isEmpty() && !name.isEmpty()) {
+                                if (name.equalsIgnoreCase(ball.m_name)) {
+                                    ((MainActivity) getContext()).showToast("send ball to : " + name);
                                     //sendBall(ball, id);
                                     removeBall(ball.m_id);
                                     this.invalidate();
@@ -662,7 +662,7 @@ public class MainView extends View {
     }
 
     private String isSending(float x, float y) {
-        String receiverId = "";
+        String receiverName = "";
         float rate = 1000.0f;
         if (!m_remotePhones.isEmpty()) {
             for (RemotePhoneInfo remotePhoneInfo : m_remotePhones) {
@@ -673,14 +673,14 @@ public class MainView extends View {
                 double dist = Math.sqrt(Math.pow((x - pointX_remote), 2) + Math.pow((y - pointY_remote), 2));
                 if (dist < (m_remotePhoneRadius + m_ballRadius)){
                     if (dist < rate) {
-                        receiverId = remotePhoneInfo.m_name;
+                        receiverName = remotePhoneInfo.m_name;
                         rate = (float)dist;
                     }
                 }
             }
         }
 
-        return receiverId;
+        return receiverName;
     }
 
     public void addBall() {

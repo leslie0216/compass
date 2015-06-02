@@ -710,8 +710,8 @@ public class MainActivity extends Activity {
 
                 boolean isSendingBall = jsonObject.getBoolean("isSendingBall");
                 if (isSendingBall && m_mainView != null) {
-                    String receiverId = jsonObject.getString("receiverName");
-                    if (receiverId.equalsIgnoreCase(m_userName)) {
+                    String receiverName = jsonObject.getString("receiverName");
+                    if (receiverName.equalsIgnoreCase(m_userName)) {
                         String ballId = jsonObject.getString("ballId");
                         int ballColor = jsonObject.getInt("ballColor");
                         m_mainView.receivedBall(ballId, ballColor);

@@ -28,7 +28,21 @@ public class MainLogger {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            } else {
+                if (!targetFile.delete()) {
+                    Toast.makeText(context, "Can not delete old log file!", Toast.LENGTH_SHORT).show();
+                } else {
+                    try {
+                        if (!targetFile.createNewFile())
+                        {
+                            Toast.makeText(context, "Can not create log file!", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
+
             try {
                 m_bufferedWriter = new BufferedWriter(new FileWriter(targetPath, true));
             } catch (IOException e) {
