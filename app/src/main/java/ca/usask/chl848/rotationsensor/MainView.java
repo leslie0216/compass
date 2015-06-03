@@ -287,7 +287,7 @@ public class MainView extends View {
         RotationVector rotationVector = getRotationVector();
 
         //String output = "Z = " + String.format("%.3f",rotationVector.m_z) + " X = " + String.format("%.3f", rotationVector.m_x) + " Y = " + String.format("%.3f", rotationVector.m_y);
-        String output = "Yaw = " + String.format("%.3f",rotationVector.m_z);
+        String output = "Azimuth = " + String.format("%.3f",rotationVector.m_z);
         canvas.drawText(output, (int) (displayMetrics.widthPixels * 0.3), (int) (displayMetrics.heightPixels * 0.85), m_paint);
 
         /*
