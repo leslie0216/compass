@@ -52,9 +52,11 @@ public class MainLogger {
         }
     }
 
-    public void write(String str) {
+    public void write(String str, boolean isFirstLine) {
         try {
-            m_bufferedWriter.write(System.getProperty("line.separator"));
+            if (!isFirstLine) {
+                m_bufferedWriter.write(System.getProperty("line.separator"));
+            }
             m_bufferedWriter.write(str);
         } catch (IOException e) {
             e.printStackTrace();
