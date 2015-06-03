@@ -450,7 +450,7 @@ public class MainActivity extends Activity {
             // Loop through paired devices
             for (BluetoothDevice device : pairedDevices) {
                 // Add the name and address to an array adapter to show in a ListView
-                if (device.getName().contains("312"))
+                if (device.getName().contains("btserver"))
                 {
                     m_device = device;
                     break;
