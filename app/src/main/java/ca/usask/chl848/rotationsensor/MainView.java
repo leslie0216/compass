@@ -39,6 +39,10 @@ public class MainView extends View {
 
     private Queue<RotationVector> m_rotationVectorQueue;
     private static final int m_filterSize = 30;
+    private static final int m_textSize = 30;
+    private static final int m_messageTextSize = 50;
+    private static final int m_textStrokeWidth = 2;
+    private static final int m_boundaryStrokeWidth = 10;
 
     private String m_message;
 
@@ -67,7 +71,7 @@ public class MainView extends View {
     private ArrayList<Ball> m_balls;
     private int m_touchedBallId;
 
-    private static final float m_ballRadius = 50.0f;
+    private float m_ballRadius;
     private float m_ballBornX;
     private float m_ballBornY;
 
@@ -99,6 +103,8 @@ public class MainView extends View {
     private int m_currentTrail;
     private static final int m_experimentPhoneNumber = 3;
     private MainLogger m_logger;
+    // calibaration
+    private boolean m_isAccuracy = true;
     /**
      * experiment end
      */
@@ -123,6 +129,7 @@ public class MainView extends View {
         m_touchedBallId = -1;
         m_balls = new ArrayList<>();
         DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
+        m_ballRadius = displayMetrics.widthPixels * 0.08f;
         m_ballBornX = displayMetrics.widthPixels * 0.5f;
         m_ballBornY = displayMetrics.heightPixels * 0.75f - m_ballRadius * 2.0f;
 
@@ -145,6 +152,7 @@ public class MainView extends View {
 
     @Override
     protected  void onDraw(Canvas canvas) {
+        showAccuracy(canvas);
         showArrow(canvas);
         showBoundary(canvas);
         showLocalCircleCoordinate(canvas);
@@ -153,9 +161,22 @@ public class MainView extends View {
         showBalls(canvas);
     }
 
+    public void showAccuracy(Canvas canvas) {
+        if (!m_isAccuracy) {
+            m_paint.setTextSize(m_textSize);
+            m_paint.setColor(Color.RED);
+            m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+            DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
+
+            String output = "Inaccurate";
+            canvas.drawText(output, (int) (displayMetrics.widthPixels * 0.05), (int) (displayMetrics.heightPixels * 0.1), m_paint);
+        }
+    }
+
     public void showBoundary(Canvas canvas) {
         m_paint.setColor(Color.RED);
-        m_paint.setStrokeWidth(10);
+        m_paint.setStrokeWidth(m_boundaryStrokeWidth);
         m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
@@ -172,7 +193,8 @@ public class MainView extends View {
                 /**
                  * experiment begin
                  */
-                m_paint.setStrokeWidth(2);
+
+                m_paint.setStrokeWidth(m_textStrokeWidth);
                 float textX = ball.m_ballX - m_ballRadius;
                 float textY = ball.m_ballY - m_ballRadius;
                 if (ball.m_name.length() > 5) {
@@ -244,7 +266,7 @@ public class MainView extends View {
 
         m_paint.setColor(Color.BLUE);
         m_paint.setStyle(Paint.Style.STROKE);
-        m_paint.setStrokeWidth(10);
+        m_paint.setStrokeWidth(m_boundaryStrokeWidth);
         //canvas.drawCircle(centerX, centerY, radius, m_paint);
         canvas.drawArc(disRect, 180.0f, 180.0f, false, m_paint);
 
@@ -264,8 +286,8 @@ public class MainView extends View {
                 canvas.drawCircle(pointX_remote, pointY_remote, m_remotePhoneRadius, m_paint);
 
                 if (getShowRemoteNames()) {
-                    m_paint.setTextSize(30);
-                    m_paint.setStrokeWidth(2);
+                    m_paint.setTextSize(m_textSize);
+                    m_paint.setStrokeWidth(m_textStrokeWidth);
                     float textX = pointX_remote - m_remotePhoneRadius;
                     float textY = pointY_remote - m_remotePhoneRadius * 1.5f;
                     if (info.m_name.length() > 5) {
@@ -278,7 +300,7 @@ public class MainView extends View {
     }
 
     public void showRotationVector(Canvas canvas) {
-        m_paint.setTextSize(30);
+        m_paint.setTextSize(m_textSize);
         m_paint.setColor(Color.RED);
         m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
@@ -307,9 +329,9 @@ public class MainView extends View {
     }
 
     public void showMessage(Canvas canvas) {
-        m_paint.setTextSize(50);
+        m_paint.setTextSize(m_messageTextSize);
         m_paint.setColor(Color.GREEN);
-        m_paint.setStrokeWidth(2);
+        m_paint.setStrokeWidth(m_textStrokeWidth);
         m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
         DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
         canvas.drawText(m_message, displayMetrics.widthPixels * 0.3f, displayMetrics.heightPixels * 0.8f, m_paint);
@@ -361,6 +383,10 @@ public class MainView extends View {
 
         m_rotationVectorQueue.offer(rotationVector);
         this.invalidate();
+    }
+
+    public void setIsAccuracy (boolean isAccuracy) {
+        m_isAccuracy = isAccuracy;
     }
 
     private RotationVector getRotationVector() {
@@ -448,7 +474,7 @@ public class MainView extends View {
 
         float X = event.getX();
         float Y = event.getY();
-        float radius = event.getTouchMajor();
+        float touchRadius = event.getTouchMajor();
 
         int ballCount = m_balls.size();
         switch (eventaction) {
@@ -460,7 +486,7 @@ public class MainView extends View {
 
                     double dist;
                     dist = Math.sqrt(Math.pow((X - ball.m_ballX), 2) + Math.pow((Y - ball.m_ballY), 2));
-                    if (dist <= radius) {
+                    if (dist <= (touchRadius + m_ballRadius)) {
                         ball.m_isTouched = true;
                         m_touchedBallId = i;
 
@@ -500,7 +526,7 @@ public class MainView extends View {
 
                         double dist = Math.sqrt(Math.pow((X - pointX_remote),2) + Math.pow((Y - pointY_remote), 2));
 
-                        if (dist <= (radius + m_remotePhoneRadius)) {
+                        if (dist <= (touchRadius + m_remotePhoneRadius)) {
                             show = true;
                             break;
                         }
@@ -513,6 +539,29 @@ public class MainView extends View {
 
                 break;
             case MotionEvent.ACTION_MOVE:
+                if (getShowRemoteNames()) {
+                    boolean show = false;
+
+                    for (RemotePhoneInfo remotePhone : m_remotePhones) {
+                        float angle_remote = calculateRemoteAngleInLocalCoordinate(remotePhone.m_z);
+                        float pointX_remote = m_localCoordinateCenterX + m_localCoordinateRadius * (float) Math.cos(Math.toRadians(angle_remote));
+                        float pointY_remote = m_localCoordinateCenterY - m_localCoordinateRadius * (float) Math.sin(Math.toRadians(angle_remote));
+
+                        double dist = Math.sqrt(Math.pow((X - pointX_remote),2) + Math.pow((Y - pointY_remote), 2));
+
+                        if (dist <= (touchRadius + m_remotePhoneRadius)) {
+                            show = true;
+                            break;
+                        }
+                    }
+
+                    if (!show) {
+                        handler.removeCallbacks(mLongPressed);
+                        setShowRemoteNames(false);
+                        invalidate();
+                    }
+                }
+
                 if (m_touchedBallId > -1) {
                     Ball ball = m_balls.get(m_touchedBallId);
                     if (ball.m_isTouched) {
@@ -663,7 +712,7 @@ public class MainView extends View {
 
     private String isSending(float x, float y) {
         String receiverName = "";
-        float rate = 1000.0f;
+        float rate = 10000.0f;
         if (!m_remotePhones.isEmpty()) {
             for (RemotePhoneInfo remotePhoneInfo : m_remotePhones) {
                 float angle_remote = calculateRemoteAngleInLocalCoordinate(remotePhoneInfo.m_z);
@@ -788,6 +837,8 @@ public class MainView extends View {
         resetBlock();
 
         m_logger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name));
+        //<participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of drops for this trial> <number of errors for this trial>
+        m_logger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "elapsedTime" + "," + "drops" + "," + "errors");
 
         ((MainActivity)getContext()).runOnUiThread(new Runnable() {
             @Override
@@ -864,9 +915,8 @@ public class MainView extends View {
         long timeElapse = System.currentTimeMillis() - m_trailStartTime;
 
         // <participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of drops for this trial> <number of errors for this trial>
-
         if (m_logger != null) {
-            m_logger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + timeElapse + "," + m_numberOfDrops + "," + m_numberOfErrors, (m_currentBlock == 1 && m_currentTrail == 1));
+            m_logger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + timeElapse + "," + m_numberOfDrops + "," + m_numberOfErrors);
         }
 
         if (m_currentTrail < m_maxTrails) {

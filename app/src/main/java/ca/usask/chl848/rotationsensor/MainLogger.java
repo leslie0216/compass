@@ -8,6 +8,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+
 /**
  * Created by chl848 on 06/02/2015.
  */
@@ -15,8 +18,16 @@ public class MainLogger {
     private BufferedWriter m_bufferedWriter;
 
     public MainLogger(Context context, String fileName) {
-        String SUFFIX = ".csv";
-        String targetPath = Environment.getExternalStorageDirectory().getPath()+File.separator+fileName + SUFFIX;
+        String SUFFIX = ".txt";
+        Calendar calendar = Calendar.getInstance();
+        String year = String.valueOf(calendar.get(Calendar.YEAR));
+        String month = String.valueOf(calendar.get(Calendar.MONTH));
+        String date = String.valueOf(calendar.get(Calendar.DATE));
+        String hour = String.valueOf(calendar.get(Calendar.HOUR_OF_DAY));
+        String minute = String.valueOf(calendar.get(Calendar.MINUTE));
+        String second = String.valueOf(calendar.get(Calendar.SECOND));
+        String time = year+"-"+month+"-"+date+"-"+hour+"-"+minute+"-"+second;
+        String targetPath = Environment.getExternalStorageDirectory().getPath() + File.separator + fileName + "-" + time + SUFFIX;
         File targetFile = new File(targetPath);
         if (targetFile != null) {
             if (!targetFile.exists()) {
@@ -52,11 +63,23 @@ public class MainLogger {
         }
     }
 
-    public void write(String str, boolean isFirstLine) {
+    public void writeHeaders(String str) {
         try {
-            if (!isFirstLine) {
-                m_bufferedWriter.write(System.getProperty("line.separator"));
+            m_bufferedWriter.write(str);
+        } catch (IOException e) {
+            e.printStackTrace();
+            try {
+                m_bufferedWriter.flush();
+                m_bufferedWriter.close();
+            } catch (IOException e2) {
+                e2.printStackTrace();
             }
+        }
+    }
+
+    public void write(String str) {
+        try {
+            m_bufferedWriter.write(System.getProperty("line.separator"));
             m_bufferedWriter.write(str);
         } catch (IOException e) {
             e.printStackTrace();
