@@ -385,8 +385,8 @@ public class MainView extends View {
         // log raw angle
         if (m_isStarted) {
             if (m_angleLogger != null) {
-                //<participantID> <condition> <block#> <trial#> <angle> <isAccurate> <timestamp>
-                m_angleLogger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + values[0] + "," + (isAccurate?1:0) + "," + System.currentTimeMillis(), false);
+                //<participantID> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
+                m_angleLogger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + values[0] + "," + values[1] + "," + values[2] + "," + (isAccurate?1:0) + "," + System.currentTimeMillis(), false);
             }
         }
 
@@ -858,15 +858,17 @@ public class MainView extends View {
         m_currentBlock = 0;
         m_currentTrail = 0;
 
+        m_isStarted = false;
+
         resetBlock();
 
         m_logger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name));
         //<participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
         m_logger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "elapsedTime" + "," + "errors" + "," + "release" + "," + "drops" + "," + "touch" + "," + "touchBall" + "," + "longPress" + "," + "timestamp");
 
-        m_angleLogger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name)+"_angle");
-        //<participantID> <condition> <block#> <trial#> <angle> <isAccurate> <timestamp>
-        m_angleLogger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "angle" + "," + "isAccurate" + "," + "timestamp");
+        m_angleLogger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name)+"_orientation");
+        //<participantID> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
+        m_angleLogger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "azimuth(Z)" + "," + "pitch(X)" + "," + "roll(Y)" + "," + "isAccurate" + "," + "timestamp");
 
         ((MainActivity) getContext()).runOnUiThread(new Runnable() {
             @Override
@@ -914,19 +916,26 @@ public class MainView extends View {
     }
 
     public void startBlock() {
-        if (!m_isStarted) {
-            m_isStarted = true;
-        }
         m_currentBlock += 1;
         m_currentTrail = 0;
+        m_isStarted = true;
+
         resetBlock();
         startTrial();
         ((MainActivity)getContext()).setStartButtonEnabled(false);
     }
 
     public void endBlock() {
-        if (isFinished() && (m_logger != null)) {
-            m_logger.close();
+        m_isStarted = false;
+
+        if (isFinished()) {
+            if (m_logger != null) {
+                m_logger.close();
+            }
+
+            if (m_angleLogger != null) {
+                m_angleLogger.close();
+            }
         }
 
         ((MainActivity) getContext()).setContinueButtonEnabled(true);
@@ -963,6 +972,10 @@ public class MainView extends View {
     public void closeLogger() {
         if (m_logger != null) {
             m_logger.close();
+        }
+
+        if (m_angleLogger != null) {
+            m_angleLogger.close();
         }
     }
 

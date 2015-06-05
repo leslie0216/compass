@@ -1,11 +1,13 @@
 package ca.usask.chl848.rotationsensor;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -138,18 +140,6 @@ public class MainActivity extends Activity {
             sendMessage();
             timerHandler.postDelayed(this, 500);
         }
-    };
-
-    private static boolean m_isExit = false;
-
-    Handler m_exitHandler = new Handler() {
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            m_isExit = false;
-        }
-
     };
 
     @Override
@@ -419,22 +409,25 @@ public class MainActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             exit();
-            return false;
+            return true;
         } else {
             return super.onKeyDown(keyCode, event);
         }
     }
 
     private void exit() {
-        if (!m_isExit) {
-            m_isExit = true;
-            Toast.makeText(getApplicationContext(), "press back key again to exit", Toast.LENGTH_SHORT).show();
-            m_exitHandler.sendEmptyMessageDelayed(0, 1000);
-        } else {
-            m_mainView.closeLogger();
-            finish();
-            System.exit(0);
-        }
+        new AlertDialog.Builder(MainActivity.this).setTitle("Warning").setMessage("Do you want to exit?").setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+                System.exit(0);
+            }
+        }).setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //
+            }
+        }).show();
     }
 
     private void stopThreads() {
