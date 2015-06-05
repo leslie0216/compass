@@ -85,6 +85,7 @@ public class MainView extends View {
         @Override
         public void run() {
             setShowRemoteNames(true);
+            m_numberOfLongPress++;
             invalidate();
         }
     };
@@ -97,14 +98,20 @@ public class MainView extends View {
     private long m_trailStartTime;
     private int m_numberOfDrops;
     private int m_numberOfErrors;
+    private int m_numberOfTouch;
+    private int m_numberOfTouchBall;
+    private int m_numberOfLongPress;
+    private int m_numberOfRelease;
     private int m_maxBlocks;
     private int m_maxTrails;
     private int m_currentBlock;
     private int m_currentTrail;
     private static final int m_experimentPhoneNumber = 3;
     private MainLogger m_logger;
-    // calibaration
-    private boolean m_isAccuracy = true;
+    private MainLogger m_angleLogger;
+    private boolean m_isStarted;
+    // calibration
+    private boolean m_isAccurate = true;
     /**
      * experiment end
      */
@@ -140,6 +147,10 @@ public class MainView extends View {
         m_remotePhoneRadius = displayMetrics.widthPixels * 0.05f;
 
         setShowRemoteNames(false);
+
+        resetCounters();
+
+        m_isStarted = false;
     }
 
     private void setShowRemoteNames(boolean show) {
@@ -162,7 +173,7 @@ public class MainView extends View {
     }
 
     public void showAccuracy(Canvas canvas) {
-        if (!m_isAccuracy) {
+        if (!m_isAccurate) {
             m_paint.setTextSize(m_textSize);
             m_paint.setColor(Color.RED);
             m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -370,7 +381,16 @@ public class MainView extends View {
         return new_remote_angle;
     }
 
-    public void setRotation(float[] values) {
+    public void setRotation(float[] values, boolean isAccurate) {
+        // log raw angle
+        if (m_isStarted) {
+            if (m_angleLogger != null) {
+                //<participantID> <condition> <block#> <trial#> <angle> <isAccurate> <timestamp>
+                m_angleLogger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + values[0] + "," + (isAccurate?1:0) + "," + System.currentTimeMillis(), false);
+            }
+        }
+
+
         RotationVector rotationVector = new RotationVector();
         rotationVector.m_x = values[1];
         rotationVector.m_y = values[2];
@@ -385,8 +405,8 @@ public class MainView extends View {
         this.invalidate();
     }
 
-    public void setIsAccuracy (boolean isAccuracy) {
-        m_isAccuracy = isAccuracy;
+    public void setIsAccurate (boolean isAccurate) {
+        m_isAccurate = isAccurate;
     }
 
     private RotationVector getRotationVector() {
@@ -479,6 +499,7 @@ public class MainView extends View {
         int ballCount = m_balls.size();
         switch (eventaction) {
             case MotionEvent.ACTION_DOWN:
+                m_numberOfTouch++;
                 m_touchedBallId = -1;
                 for (int i = 0; i < ballCount; ++i){
                     Ball ball = m_balls.get(i);
@@ -535,6 +556,8 @@ public class MainView extends View {
                     if (show) {
                         handler.postDelayed(mLongPressed, 1000);
                     }
+                } else {
+                    m_numberOfTouchBall++;
                 }
 
                 break;
@@ -592,6 +615,7 @@ public class MainView extends View {
                     setShowRemoteNames(false);
                     invalidate();
                 }
+                m_numberOfRelease++;
 
                 if (m_touchedBallId > -1) {
                     m_numberOfDrops += 1;
@@ -837,10 +861,14 @@ public class MainView extends View {
         resetBlock();
 
         m_logger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name));
-        //<participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of drops for this trial> <number of errors for this trial>
-        m_logger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "elapsedTime" + "," + "drops" + "," + "errors");
+        //<participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
+        m_logger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "elapsedTime" + "," + "errors" + "," + "release" + "," + "drops" + "," + "touch" + "," + "touchBall" + "," + "longPress" + "," + "timestamp");
 
-        ((MainActivity)getContext()).runOnUiThread(new Runnable() {
+        m_angleLogger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name)+"_angle");
+        //<participantID> <condition> <block#> <trial#> <angle> <isAccurate> <timestamp>
+        m_angleLogger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "angle" + "," + "isAccurate" + "," + "timestamp");
+
+        ((MainActivity) getContext()).runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 ((MainActivity) getContext()).setStartButtonEnabled(true);
@@ -882,11 +910,13 @@ public class MainView extends View {
         Random rnd = new Random();
         m_color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
 
-        m_numberOfDrops = 0;
-        m_numberOfErrors = 0;
+        resetCounters();
     }
 
     public void startBlock() {
+        if (!m_isStarted) {
+            m_isStarted = true;
+        }
         m_currentBlock += 1;
         m_currentTrail = 0;
         resetBlock();
@@ -906,17 +936,21 @@ public class MainView extends View {
     public void startTrial() {
         m_trailStartTime = System.currentTimeMillis();
         m_currentTrail += 1;
-        m_numberOfErrors = 0;
-        m_numberOfDrops = 0;
+        resetCounters();
         addBall();
     }
 
     public void endTrail() {
-        long timeElapse = System.currentTimeMillis() - m_trailStartTime;
+        long trailEndTime = System.currentTimeMillis();
+        long timeElapse = trailEndTime - m_trailStartTime;
 
-        // <participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of drops for this trial> <number of errors for this trial>
+        //<participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
         if (m_logger != null) {
-            m_logger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + timeElapse + "," + m_numberOfDrops + "," + m_numberOfErrors);
+            m_logger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + timeElapse + "," + m_numberOfErrors + "," + m_numberOfRelease + "," + m_numberOfDrops + "," + m_numberOfTouch + "," + m_numberOfTouchBall + "," + m_numberOfLongPress + "," + trailEndTime, true);
+        }
+
+        if (m_angleLogger != null) {
+            m_angleLogger.flush();
         }
 
         if (m_currentTrail < m_maxTrails) {
@@ -930,6 +964,15 @@ public class MainView extends View {
         if (m_logger != null) {
             m_logger.close();
         }
+    }
+
+    private void resetCounters() {
+        m_numberOfDrops = 0;
+        m_numberOfErrors = 0;
+        m_numberOfTouch = 0;
+        m_numberOfTouchBall = 0;
+        m_numberOfLongPress = 0;
+        m_numberOfRelease = 0;
     }
     /**
      * experiment end

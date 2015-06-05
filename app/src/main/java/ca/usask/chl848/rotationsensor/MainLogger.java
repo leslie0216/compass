@@ -21,7 +21,7 @@ public class MainLogger {
         String SUFFIX = ".txt";
         Calendar calendar = Calendar.getInstance();
         String year = String.valueOf(calendar.get(Calendar.YEAR));
-        String month = String.valueOf(calendar.get(Calendar.MONTH));
+        String month = String.valueOf(calendar.get(Calendar.MONTH) + 1);
         String date = String.valueOf(calendar.get(Calendar.DATE));
         String hour = String.valueOf(calendar.get(Calendar.HOUR_OF_DAY));
         String minute = String.valueOf(calendar.get(Calendar.MINUTE));
@@ -66,6 +66,7 @@ public class MainLogger {
     public void writeHeaders(String str) {
         try {
             m_bufferedWriter.write(str);
+            m_bufferedWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
             try {
@@ -77,10 +78,13 @@ public class MainLogger {
         }
     }
 
-    public void write(String str) {
+    public void write(String str, boolean isFlush) {
         try {
             m_bufferedWriter.write(System.getProperty("line.separator"));
             m_bufferedWriter.write(str);
+            if (isFlush) {
+                m_bufferedWriter.flush();
+            }
         } catch (IOException e) {
             e.printStackTrace();
             try {
@@ -89,6 +93,14 @@ public class MainLogger {
             } catch (IOException e2) {
                 e2.printStackTrace();
             }
+        }
+    }
+
+    public void flush() {
+        try {
+            m_bufferedWriter.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

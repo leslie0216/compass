@@ -326,8 +326,14 @@ public class MainActivity extends Activity {
 
     public  void updateView(float[] values) {
         if(m_mainView != null) {
-            m_mainView.setRotation(values);
-            m_mainView.setIsAccuracy(!m_isCalibration);
+            boolean isAccurate = false;
+            double data = Math.sqrt(Math.pow(magneticFieldValues[0], 2) + Math.pow(magneticFieldValues[1], 2) + Math.pow(magneticFieldValues[2], 2));
+            if (m_magneticFieldAccuracy != SensorManager.SENSOR_STATUS_UNRELIABLE && (data >= 25 && data <= 65)){
+                isAccurate = true;
+            }
+
+            m_mainView.setRotation(values, isAccurate);
+            m_mainView.setIsAccurate(!m_isCalibration);
         }
     }
 
@@ -423,7 +429,7 @@ public class MainActivity extends Activity {
         if (!m_isExit) {
             m_isExit = true;
             Toast.makeText(getApplicationContext(), "press back key again to exit", Toast.LENGTH_SHORT).show();
-            m_exitHandler.sendEmptyMessageDelayed(0, 2000);
+            m_exitHandler.sendEmptyMessageDelayed(0, 1000);
         } else {
             m_mainView.closeLogger();
             finish();
