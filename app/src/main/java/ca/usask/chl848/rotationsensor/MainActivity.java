@@ -150,7 +150,7 @@ public class MainActivity extends Activity {
         Intent intent = this.getIntent();
         Bundle bundle = intent.getExtras();
         m_userName = bundle.getString("user");
-        m_userId = "P" + bundle.getString("id");
+        m_userId = bundle.getString("id");
 
         setTitle(m_userId + " : " + m_userName + " - " + getResources().getString(R.string.app_name));
 
