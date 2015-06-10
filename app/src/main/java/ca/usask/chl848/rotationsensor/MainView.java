@@ -385,8 +385,8 @@ public class MainView extends View {
         // log raw angle
         if (m_isStarted) {
             if (m_angleLogger != null) {
-                //<participantID> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
-                m_angleLogger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + values[0] + "," + values[1] + "," + values[2] + "," + (isAccurate?1:0) + "," + System.currentTimeMillis(), false);
+                //<participantID> <participantName> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
+                m_angleLogger.write(m_id + "," + m_name + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + values[0] + "," + values[1] + "," + values[2] + "," + (isAccurate?1:0) + "," + System.currentTimeMillis(), false);
             }
         }
 
@@ -863,12 +863,12 @@ public class MainView extends View {
         resetBlock();
 
         m_logger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name));
-        //<participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
-        m_logger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "elapsedTime" + "," + "errors" + "," + "release" + "," + "drops" + "," + "touch" + "," + "touchBall" + "," + "longPress" + "," + "timestamp");
+        //<participantID> <participantName> <condition> <block#> <trial#> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
+        m_logger.writeHeaders("participantID" + "," + "participantName" + "," + "condition" + "," + "block" + "," + "trial" + "," + "elapsedTime" + "," + "errors" + "," + "release" + "," + "drops" + "," + "touch" + "," + "touchBall" + "," + "longPress" + "," + "timestamp");
 
         m_angleLogger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name)+"_orientation");
-        //<participantID> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
-        m_angleLogger.writeHeaders("participantID" + "," + "condition" + "," + "block" + "," + "trial" + "," + "azimuth(Z)" + "," + "pitch(X)" + "," + "roll(Y)" + "," + "isAccurate" + "," + "timestamp");
+        //<participantID> <participantName> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
+        m_angleLogger.writeHeaders("participantID" + "," + "participantName" + "," + "condition" + "," + "block" + "," + "trial" + "," + "azimuth(Z)" + "," + "pitch(X)" + "," + "roll(Y)" + "," + "isAccurate" + "," + "timestamp");
 
         ((MainActivity) getContext()).runOnUiThread(new Runnable() {
             @Override
@@ -953,9 +953,9 @@ public class MainView extends View {
         long trailEndTime = System.currentTimeMillis();
         long timeElapse = trailEndTime - m_trailStartTime;
 
-        //<participantID> <condition> <block#> <trial#> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
+        //<participantID> <participantName> <condition> <block#> <trial#> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
         if (m_logger != null) {
-            m_logger.write(m_id + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + timeElapse + "," + m_numberOfErrors + "," + m_numberOfRelease + "," + m_numberOfDrops + "," + m_numberOfTouch + "," + m_numberOfTouchBall + "," + m_numberOfLongPress + "," + trailEndTime, true);
+            m_logger.write(m_id + "," + m_name + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + timeElapse + "," + m_numberOfErrors + "," + m_numberOfRelease + "," + m_numberOfDrops + "," + m_numberOfTouch + "," + m_numberOfTouchBall + "," + m_numberOfLongPress + "," + trailEndTime, true);
         }
 
         if (m_angleLogger != null) {

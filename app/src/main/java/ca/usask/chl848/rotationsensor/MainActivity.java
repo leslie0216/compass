@@ -152,7 +152,7 @@ public class MainActivity extends Activity {
         m_userName = bundle.getString("user");
         m_userId = "P" + bundle.getString("id");
 
-        setTitle(m_userId+" : "+m_userName);
+        setTitle(m_userId + " : " + m_userName + " - " + getResources().getString(R.string.app_name));
 
         /**
          * BT begin
