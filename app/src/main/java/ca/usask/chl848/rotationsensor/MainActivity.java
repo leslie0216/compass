@@ -171,6 +171,7 @@ public class MainActivity extends Activity {
                     if (!m_mainView.isFinished()) {
                         m_mainView.startBlock();
                     } else {
+                        m_mainView.closeLogger();
                         finish();
                         System.exit(0);
                     }
@@ -419,6 +420,7 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(MainActivity.this).setTitle("Warning").setMessage("Do you want to exit?").setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                m_mainView.closeLogger();
                 finish();
                 System.exit(0);
             }

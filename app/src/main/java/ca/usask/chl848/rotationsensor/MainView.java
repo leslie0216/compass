@@ -1,6 +1,8 @@
 package ca.usask.chl848.rotationsensor;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -171,11 +173,12 @@ public class MainView extends View {
         showMessage(canvas);
         showRotationVector(canvas);
         showBalls(canvas);
+        showProgress(canvas);
     }
 
     public void showAccuracy(Canvas canvas) {
         if (!m_isAccurate) {
-            m_paint.setTextSize(m_textSize);
+            m_paint.setTextSize(m_messageTextSize);
             m_paint.setColor(Color.RED);
             m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
@@ -347,6 +350,20 @@ public class MainView extends View {
         m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
         DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
         canvas.drawText(m_message, displayMetrics.widthPixels * 0.3f, displayMetrics.heightPixels * 0.8f, m_paint);
+    }
+
+    public void showProgress(Canvas canvas) {
+        m_paint.setTextSize(m_messageTextSize);
+        m_paint.setColor(Color.BLUE);
+        m_paint.setStrokeWidth(m_textStrokeWidth);
+        m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
+        DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
+
+        String block = "Block: " + m_currentBlock +"/" + m_maxBlocks;
+        canvas.drawText(block, (int) (displayMetrics.widthPixels * 0.75), (int) (displayMetrics.heightPixels * 0.1), m_paint);
+
+        String trial = "Trial: " + m_currentTrail +"/" + m_maxTrails;
+        canvas.drawText(trial, (int) (displayMetrics.widthPixels * 0.75), (int) (displayMetrics.heightPixels * 0.15), m_paint);
     }
 
     private float calculateRemoteAngleInLocalCoordinate(float raw_angle) {
@@ -876,6 +893,7 @@ public class MainView extends View {
             @Override
             public void run() {
                 ((MainActivity) getContext()).setStartButtonEnabled(true);
+                ((MainActivity) getContext()).setContinueButtonEnabled(false);
             }
         });
     }
@@ -925,22 +943,24 @@ public class MainView extends View {
         resetBlock();
         startTrial();
         ((MainActivity)getContext()).setStartButtonEnabled(false);
+        ((MainActivity)getContext()).setContinueButtonEnabled(false);
     }
 
     public void endBlock() {
         m_isStarted = false;
 
         if (isFinished()) {
-            if (m_logger != null) {
-                m_logger.close();
-            }
-
-            if (m_angleLogger != null) {
-                m_angleLogger.close();
-            }
+            closeLogger();
         }
 
+        new AlertDialog.Builder(getContext()).setTitle("Warning").setMessage("You have completed block " + m_currentBlock + ", please wait for other participants.").setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        }).show();
+
         ((MainActivity) getContext()).setContinueButtonEnabled(true);
+        ((MainActivity)getContext()).setStartButtonEnabled(false);
         m_currentTrail = 0;
     }
 
@@ -954,6 +974,14 @@ public class MainView extends View {
     public void endTrail() {
         long trailEndTime = System.currentTimeMillis();
         long timeElapse = trailEndTime - m_trailStartTime;
+
+        if (m_currentBlock == 0) {
+            ++m_currentBlock;
+        }
+
+        if (m_currentTrail == 0) {
+            ++m_currentTrail;
+        }
 
         //<participantID> <participantName> <condition> <block#> <trial#> <receiver name> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
         if (m_logger != null) {
