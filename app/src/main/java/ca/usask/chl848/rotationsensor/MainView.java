@@ -41,7 +41,7 @@ public class MainView extends View {
 
     private Queue<RotationVector> m_rotationVectorQueue;
     private static final int m_filterSize = 15;
-    private static final int m_textSize = 30;
+    private static final int m_textSize = 70;
     private static final int m_messageTextSize = 50;
     private static final int m_textStrokeWidth = 2;
     private static final int m_boundaryStrokeWidth = 10;
@@ -109,7 +109,7 @@ public class MainView extends View {
     private int m_maxTrails;
     private int m_currentBlock;
     private int m_currentTrail;
-    private static final int m_experimentPhoneNumber = 3;
+    private static final int m_experimentPhoneNumber = 1;
     private MainLogger m_logger;
     private MainLogger m_angleLogger;
     private boolean m_isStarted;
@@ -135,7 +135,8 @@ public class MainView extends View {
         m_id = ((MainActivity)(context)).getUserId();
         m_name = ((MainActivity)(context)).getUserName();
         Random rnd = new Random();
-        m_color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+        //m_color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+        m_color = ((MainActivity)(context)).getUserColor();
 
         m_touchedBallId = -1;
         m_balls = new ArrayList<>();
@@ -176,7 +177,7 @@ public class MainView extends View {
         showMessage(canvas);
         showRotationVector(canvas);
         showBalls(canvas);
-        showProgress(canvas);
+        //showProgress(canvas);
     }
 
     public void showAccuracy(Canvas canvas) {
@@ -213,6 +214,7 @@ public class MainView extends View {
                  */
 
                 m_paint.setStrokeWidth(m_textStrokeWidth);
+                m_paint.setTextSize(m_textSize);
                 float textX = ball.m_ballX - m_ballRadius;
                 float textY = ball.m_ballY - m_ballRadius;
                 if (ball.m_name.length() > 5) {
@@ -318,7 +320,7 @@ public class MainView extends View {
     }
 
     public void showRotationVector(Canvas canvas) {
-        m_paint.setTextSize(m_textSize);
+        m_paint.setTextSize(m_messageTextSize);
         m_paint.setColor(Color.RED);
         m_paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
@@ -329,6 +331,22 @@ public class MainView extends View {
         //String output = "Z = " + String.format("%.3f",rotationVector.m_z) + " X = " + String.format("%.3f", rotationVector.m_x) + " Y = " + String.format("%.3f", rotationVector.m_y);
         String output = "Azimuth = " + String.format("%.3f",rotationVector.m_z);
         canvas.drawText(output, (int) (displayMetrics.widthPixels * 0.3), (int) (displayMetrics.heightPixels * 0.85), m_paint);
+
+        /*
+        if (!m_remotePhones.isEmpty()){
+            float remote = m_remotePhones.get(0).m_z;
+            float angle = calculateRemoteAngleInLocalCoordinate(remote);
+            float angle_2 = (getRotationVector().m_z - remote)/2.0f;
+            if (angle_2 < 0){
+                angle_2 = 180.0f+angle_2;
+            }
+
+            String output2 = "a1 = " + String.format("%.3f",angle);
+            String output3 = "a2 = " + String.format("%.3f",angle_2);
+            canvas.drawText(output2, (int) (displayMetrics.widthPixels * 0.7), (int) (displayMetrics.heightPixels * 0.1), m_paint);
+            canvas.drawText(output3, (int) (displayMetrics.widthPixels * 0.7), (int) (displayMetrics.heightPixels * 0.15), m_paint);
+        }
+        */
 
         /*
         //String output1 = "Z axis (Yaw) = " + String.format("%.4f", m_rotationVector[0]);
@@ -407,7 +425,7 @@ public class MainView extends View {
         if (m_isStarted) {
             if (m_angleLogger != null) {
                 //<participantID> <participantName> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
-                m_angleLogger.write(m_id + "," + m_name + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + values[0] + "," + values[1] + "," + values[2] + "," + (isAccurate?1:0) + "," + System.currentTimeMillis(), false);
+                //m_angleLogger.write(m_id + "," + m_name + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + values[0] + "," + values[1] + "," + values[2] + "," + (isAccurate?1:0) + "," + System.currentTimeMillis(), false);
             }
         }
 
@@ -575,7 +593,7 @@ public class MainView extends View {
                     }
 
                     if (show) {
-                        handler.postDelayed(mLongPressed, 1000);
+                        handler.postDelayed(mLongPressed, 500);
                     }
                 } else {
                     m_numberOfTouchBall++;
@@ -886,13 +904,15 @@ public class MainView extends View {
 
         resetBlock();
 
-        m_logger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name));
+        m_logger = null;
+        //m_logger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name));
         //<participantID> <participantName> <condition> <block#> <trial#> <receiver name> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
-        m_logger.writeHeaders("participantID" + "," + "participantName" + "," + "condition" + "," + "block" + "," + "trial" + "," + "receiverName" + "," + "elapsedTime" + "," + "errors" + "," + "release" + "," + "drops" + "," + "touch" + "," + "touchBall" + "," + "longPress" + "," + "timestamp");
+        //m_logger.writeHeaders("participantID" + "," + "participantName" + "," + "condition" + "," + "block" + "," + "trial" + "," + "receiverName" + "," + "elapsedTime" + "," + "errors" + "," + "release" + "," + "drops" + "," + "touch" + "," + "touchBall" + "," + "longPress" + "," + "timestamp");
 
-        m_angleLogger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name)+"_orientation");
+        m_angleLogger = null;
+        //m_angleLogger = new MainLogger(getContext(), m_id+"_"+m_name+"_"+getResources().getString(R.string.app_name)+"_orientation");
         //<participantID> <participantName> <condition> <block#> <trial#> <azimuth(Z)> <pitch(X)> <roll(Y)> <isAccurate> <timestamp>
-        m_angleLogger.writeHeaders("participantID" + "," + "participantName" + "," + "condition" + "," + "block" + "," + "trial" + "," + "azimuth(Z)" + "," + "pitch(X)" + "," + "roll(Y)" + "," + "isAccurate" + "," + "timestamp");
+        //m_angleLogger.writeHeaders("participantID" + "," + "participantName" + "," + "condition" + "," + "block" + "," + "trial" + "," + "azimuth(Z)" + "," + "pitch(X)" + "," + "roll(Y)" + "," + "isAccurate" + "," + "timestamp");
 
         ((MainActivity) getContext()).runOnUiThread(new Runnable() {
             @Override
@@ -934,8 +954,8 @@ public class MainView extends View {
         }
 
         // reset self phone color
-        Random rnd = new Random();
-        m_color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+        //Random rnd = new Random();
+        //m_color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
 
         resetCounters();
     }
@@ -990,7 +1010,7 @@ public class MainView extends View {
 
         //<participantID> <participantName> <condition> <block#> <trial#> <receiver name> <elapsed time for this trial> <number of errors for this trial> <number of release for this trial> <number of drops for this trial> <number of touch for this trial> <number of touch ball for this trial> <number of long press for this trial> <timestamp>
         if (m_logger != null) {
-            m_logger.write(m_id + "," + m_name + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + m_receiverName + "," + timeElapse + "," + m_numberOfErrors + "," + m_numberOfRelease + "," + m_numberOfDrops + "," + m_numberOfTouch + "," + m_numberOfTouchBall + "," + m_numberOfLongPress + "," + trailEndTime, true);
+            //m_logger.write(m_id + "," + m_name + "," + getResources().getString(R.string.app_name) + "," + m_currentBlock + "," + m_currentTrail + "," + m_receiverName + "," + timeElapse + "," + m_numberOfErrors + "," + m_numberOfRelease + "," + m_numberOfDrops + "," + m_numberOfTouch + "," + m_numberOfTouchBall + "," + m_numberOfLongPress + "," + trailEndTime, true);
         }
 
         if (m_angleLogger != null) {
